@@ -10,5 +10,8 @@
   },
   "exports": {
     ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@babel/parser": "7.29.9"
   }
 }

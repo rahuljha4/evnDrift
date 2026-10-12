@@ -10,6 +10,12 @@ export interface Location {
   column?: number;
 }
 
+/** An `envdrift-ignore` comment handed to suppress.ts. Never other comment text (ADR 0006). */
+export interface CommentLine {
+  line: number;
+  text: string;
+}
+
 export interface Reference {
   name: string;
   file: string;

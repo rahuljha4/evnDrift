@@ -39,7 +39,7 @@ Both are bundled into `dist/index.js`, so users never install them.
 | Package | Why | Added |
 |---|---|---|
 | `typescript` | Strict typecheck, project references | M0.0 |
-| `@types/node` | Node typings | M0.0 |
+| `@types/node` | Node typings. Pinned to 22.x (bumped from 20.19.43 in M0.1): `vitest@5.0.3` declares a peer of `@types/node` `^22 \|\| >=24`, and `npm i` failed with ERESOLVE on 20.x. Runtime floor stays Node ≥ 20 ([ADR 0010](adr/0010-node20-esm-only.md)); avoid Node-22-only APIs, because typings will not flag them. | M0.0, bumped M0.1 |
 | `vitest` | Test runner (ESM-native, fast) | M0.0 |
 | `@vitest/coverage-v8` | Coverage; core ≥ 90% lines | M0.0 |
 | `eslint`, `@eslint/js`, `typescript-eslint` | Linting, including the core purity restrictions | M0.0 |
