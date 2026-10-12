@@ -19,7 +19,8 @@
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepare": "node scripts/install-hooks.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

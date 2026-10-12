@@ -22,6 +22,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
+  // Node scripts for commits (scripts/commit-checks) run under Node, not in the browser.
+  {
+    files: ['scripts/**/*.mjs', '.claude/skills/*/scripts/*.mjs'],
+    languageOptions: { globals: { process: 'readonly', console: 'readonly' } },
+  },
   // Hard rule (PRD §8, §15): packages/core is pure — no fs, no network, no process.env.
   {
     files: ['packages/core/src/**/*.ts'],
