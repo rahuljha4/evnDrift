@@ -8,6 +8,7 @@
 // Usage: node preflight.mjs [--base <git-ref>] [--skip-tests]
 
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, relative, sep } from 'node:path';
@@ -16,6 +17,8 @@ const args = process.argv.slice(2);
 const baseIdx = args.indexOf('--base');
 const BASE = baseIdx !== -1 && args[baseIdx + 1] ? args[baseIdx + 1] : 'HEAD';
 const SKIP_TESTS = args.includes('--skip-tests');
+// --staged: review `git diff --cached` (the commit flow); the base is HEAD and file contents come from the index.
+const STAGED = args.includes('--staged');
 
 const ROOT = (() => {
   try {
@@ -65,8 +68,8 @@ function git(argv) {
 
 // ---- git scope ------------------------------------------------------------------------
 {
-  const names = git(['diff', '--name-only', BASE]);
-  const untracked = git(['ls-files', '--others', '--exclude-standard']);
+  const names = git(STAGED ? ['diff', '--cached', '--name-only'] : ['diff', '--name-only', BASE]);
+  const untracked = STAGED ? '' : git(['ls-files', '--others', '--exclude-standard']);
   if (names === null) {
     emit(
       'SCOPE',
@@ -77,7 +80,12 @@ function git(argv) {
   } else {
     const changed = names.split('\n').filter(Boolean).length;
     const added = (untracked ?? '').split('\n').filter(Boolean).length;
-    emit('SCOPE', 'INFO', '-', `base=${BASE} changed_files=${changed} untracked_files=${added}`);
+    emit(
+      'SCOPE',
+      'INFO',
+      '-',
+      `${STAGED ? 'staged' : `base=${BASE}`} changed_files=${changed} untracked_files=${added}`,
+    );
   }
 }
 
@@ -105,9 +113,11 @@ run('LINT', 'npm', ['run', 'lint']);
 
 // Prettier on the files in scope only (a repo-wide check would also flag unrelated local files).
 {
-  const changed = (git(['diff', '--name-only', BASE]) ?? '')
+  const changed = (
+    git(STAGED ? ['diff', '--cached', '--name-only'] : ['diff', '--name-only', BASE]) ?? ''
+  )
     .split('\n')
-    .concat((git(['ls-files', '--others', '--exclude-standard']) ?? '').split('\n'))
+    .concat(STAGED ? [] : (git(['ls-files', '--others', '--exclude-standard']) ?? '').split('\n'))
     .filter(
       (f) =>
         f && /\.(ts|tsx|mts|cts|js|mjs|cjs|json|md|ya?ml)$/.test(f) && existsSync(join(ROOT, f)),
@@ -444,21 +454,22 @@ if (!ts) {
     ? read(join(ROOT, 'docs/architecture/dependencies.md'))
     : '';
   for (const f of [...new Set(pkgFiles)]) {
-    const baseText = git(['show', `${BASE}:${f}`]);
+    const baseText = git(['show', `${STAGED ? 'HEAD' : BASE}:${f}`]);
     const nowPath = join(ROOT, f);
     if (!existsSync(nowPath)) continue;
+    const nowText = STAGED ? (git(['show', `:${f}`]) ?? read(nowPath)) : read(nowPath);
     if (baseText === null && git(['rev-parse', '--verify', BASE]) === null) {
       comparable = false;
       break;
     }
     const before = depsOf(baseText ?? '{}');
-    const now = depsOf(read(nowPath));
+    const now = depsOf(nowText);
     for (const [key, range] of now) {
       const [section, name] = key.split(':');
       const old = before.get(key);
       if (old === range) continue;
       reported = true;
-      const text = read(nowPath);
+      const text = nowText;
       const idx = text.indexOf(`"${name}"`);
       const where = `${f}:${idx === -1 ? 1 : lineOf(text, idx)}`;
       const exact = /^\d+\.\d+\.\d+(-[\w.]+)?$/.test(range);
@@ -583,6 +594,22 @@ if (!ts) {
         `${ids.filter((i) => !i.planned).length} catalogue IDs and ${titled.size} pattern-ID tests agree`,
       );
   }
+}
+
+// Staged-diff hash for the report header; must match scripts/commit-checks/diff-hash.mjs.
+if (STAGED) {
+  const diff = git([
+    'diff',
+    '--cached',
+    '--no-color',
+    '--no-ext-diff',
+    '--',
+    '.',
+    ':(exclude)docs/reviews',
+  ]);
+  const hash =
+    diff && diff.trim() !== '' ? createHash('sha256').update(diff).digest('hex') : 'none';
+  emit('STAGED_HASH', 'INFO', '-', `Staged-diff-sha256: ${hash}`);
 }
 
 const count = (s) => results.filter((r) => r.status === s).length;

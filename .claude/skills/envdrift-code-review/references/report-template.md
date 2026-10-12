@@ -16,6 +16,7 @@ Save as `docs/reviews/YYYY-MM-DD-<scope>.md`. Use this skeleton and these tier n
 
 ## 1. Scope and verdict
 - Scope: <what was reviewed: diff against <base>, files, range, task ID>
+- Staged-diff-sha256: <hex from the pre-flight STAGED_HASH line, or none>
 - Date: YYYY-MM-DD
 - Verdict: APPROVE | APPROVE WITH FIXES | CHANGES REQUIRED
 - Reason: <one sentence>

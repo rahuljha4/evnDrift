@@ -16,6 +16,7 @@ You review; you do not fix. The only file you may create is the report under `do
 Decide what is under review and state it at the top of the report.
 
 - Default: the uncommitted diff (`git diff HEAD`) plus untracked files from `git status`.
+- Staged (the commit flow, or "review what I staged"): `git diff --cached`. Pass `--staged` to the pre-flight; it prints a `STAGED_HASH` line.
 - Files or paths given: review those files in full.
 - A commit or range (`abc123`, `main..HEAD`): `git diff <range>`; pass `--base <ref>` to the pre-flight.
 - A task ID (`M2.3`): read the task's row in `docs/prd.md` §19 and review the diff that implements it. Its **Acceptance** column is part of what you check.
@@ -24,7 +25,7 @@ If the scope is ambiguous, pick the default and say so under Uncertainties. Do n
 
 ## 2. Pre-flight (always first)
 
-Run `node ${CLAUDE_SKILL_DIR}/scripts/preflight.mjs [--base <ref>]`. It is read-only, always exits 0 and prints `CHECK <ID> <PASS|FAIL|WARN|INFO|SKIP> <file:line> <message>` lines and a `SUMMARY`. Copy its results into the report verbatim.
+Run `node ${CLAUDE_SKILL_DIR}/scripts/preflight.mjs [--base <ref> | --staged]`. It is read-only, always exits 0 and prints `CHECK <ID> <PASS|FAIL|WARN|INFO|SKIP> <file:line> <message>` lines and a `SUMMARY`. Copy its results into the report verbatim.
 
 - A pre-flight `FAIL` for `TEST`, `TYPECHECK`, `CORE_IO`, `VALUE_PROP`, `WARN_LEAK` or `PATTERN_IDS`/`RULE_TESTS` is a **BLOCKER** candidate; `CONSOLE`, `NEW_DEP` and `LINT` failures are at least **HIGH**; `FORMAT` failures are **MEDIUM**. Confirm by reading the cited line before you tier it.
 - `SKIP` means the check did **not** run. Never write that something passed, ran or was verified unless a pre-flight line says so. List every `SKIP` under Uncertainties.
@@ -47,7 +48,7 @@ Check the PRD, not your memory of it: open the cited section (`docs/prd.md` §6 
 
 ## 4. Report
 
-Use [references/report-template.md](references/report-template.md) exactly: tiers, finding fields and section order. Save to `docs/reviews/YYYY-MM-DD-<scope>.md` (create the folder if missing; scope slug like `uncommitted`, `m2-3`, `abc123-def456`) and print a short summary in chat: verdict, counts per tier, the top three findings, the report path.
+Use [references/report-template.md](references/report-template.md) exactly: tiers, finding fields and section order. For a staged review, the report **must** contain the line `Staged-diff-sha256: <hex>` copied from the pre-flight's `STAGED_HASH` line (the commit gate in `docs/conventions/commits.md` §1.4 matches on it; use `none` if nothing is staged, and `none` for any non-staged scope). Save to `docs/reviews/YYYY-MM-DD-<scope>.md` (create the folder if missing; scope slug like `uncommitted`, `m2-3`, `abc123-def456`) and print a short summary in chat: verdict, counts per tier, the top three findings, the report path.
 
 ## Rules
 
