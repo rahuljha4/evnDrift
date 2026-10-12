@@ -12,6 +12,7 @@
 | [output-schema.json](output-schema.json) | JSON Schema of `scan --format json` | §9, §13 |
 | [ai-log.md](ai-log.md) | AI mistakes → context changes | §17 |
 | [ai-development.md](ai-development.md) | Submission evidence: how AI was used | §17, §22 |
+| [conventions/commits.md](conventions/commits.md) | Commit message format, quality rules, staged-change rules, review gate (enforced by the hooks and the `envdrift-commit` skill) | §17 |
 | [reviews/](reviews/) | Code review reports written by the `envdrift-code-review` skill | §17 |
 | [benchmark.md](benchmark.md) | Real-repo precision, performance, mutation score | §4, §16, §18 |
 

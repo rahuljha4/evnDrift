@@ -427,7 +427,7 @@ Always writes the markdown report to `$GITHUB_STEP_SUMMARY`. Needs `pull-request
 2. Tests first, then implementation.
 3. `npm test && npm run typecheck` green.
 4. `/review` on the diff; fix or log findings.
-5. Rahul reads the diff, commits with a message referencing the milestone task ID (e.g. `M2.3: scan command table output`).
+5. Rahul reads the diff. The commit is made through the `envdrift-commit` skill after his confirmation, with a message in the format of [`docs/conventions/commits.md`](conventions/commits.md) (e.g. `feat(M2.3): print the scan result as a grouped table`).
 6. Any AI mistake caught → `/log-ai-failure`; if it reveals a missing rule, update `CLAUDE.md` in the same commit.
 
 ### Evidence folder for submission
@@ -565,6 +565,7 @@ Demo video (≤ 5 min), ZIP with full Git history, final secret scan of the repo
 | 2026-10-08 | 1.0 | Initial PRD |
 | 2026-10-08 | 2.0 | Locked decisions D1–D10; added accessors, keys source, suppression syntax, ED002/ED009 split, D3 downgrade, data model, CLI spec, output formats, Action spec, task-level plan with gates and cut order; Python moved to roadmap |
 | 2026-10-09 | 2.1 | Section 5 corrected (spike did not exist) and milestone M0 added; D11 scoped npm name (`envdrift` taken); doc paths in sections 17 and 22 moved to `docs/functional/`, `docs/architecture/`, `docs/system/`; pre-existing work disclosure dated 9 Oct |
+| 2026-10-12 | 2.2 | Section 17, step 5: commits use the `<type>(<scope>): <summary>` format and the `envdrift-commit` skill, defined in `docs/conventions/commits.md` and enforced by Git hooks; Claude commits only after explicit confirmation and never pushes. |
 
 ## 24. Roadmap (post-hackathon, not in scope)
 Python and Go extractors; alias following; Kubernetes, Terraform, Vercel, Netlify sources; Secrets Manager key listing; VS Code extension; pre-commit hook; optional AI-written explanations.

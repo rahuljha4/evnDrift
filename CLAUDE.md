@@ -15,7 +15,9 @@ fixtures/         golden repos: <name>/ + expected.json   (contain FAKE .env fil
 docs/             prd.md, rules.md, patterns-catalogue.md, ai-log.md, benchmark.md,
                   functional/, architecture/ (+ adr/), system/
 .claude/commands/ add-rule, add-pattern, review, log-ai-failure
-.claude/skills/   envdrift-code-review (reviews), milestone-task (one PRD §19 task)
+.claude/skills/   envdrift-code-review (reviews), envdrift-commit (commits), milestone-task (one PRD §19 task)
+scripts/          commit-checks/ (shared by the Git hooks and the commit skill)
+.githooks/        pre-commit, commit-msg (Node)
 ```
 
 ## Commands
@@ -49,10 +51,14 @@ Node ≥ 20, ESM only. `.npmrc` pins exact versions.
 2. **Tests first**, then the implementation.
 3. `npm test && npm run typecheck && npm run lint` must be green.
 4. Run `/review` on the diff (see [Code review](#code-review)). Fix the findings, or log them.
-5. Rahul reads the diff and commits. Commit messages reference the task ID, e.g. `M2.3: scan command table output`. Claude does not commit unless asked.
+5. Rahul reads the diff. Commit only through the `envdrift-commit` skill (`/commit`), and only after Rahul's explicit confirmation. Never push. Message format: `feat(M2.3): …`, see [Commits](#commits).
 6. If an AI mistake is caught, run `/log-ai-failure`. If it reveals a missing rule, update this file **in the same commit**.
 
 Also update the doc that owns the behaviour when you change it (see the map below). Docs and code drift is a bug.
+
+## Commits
+
+Commit messages, trailers and staged-change rules are defined in [docs/conventions/commits.md](docs/conventions/commits.md). The hooks in `.githooks/` (installed by `npm install` via `prepare`) and the `envdrift-commit` skill enforce exactly that document, nothing else. Claude never uses `--no-verify`, never amends, rebases or resets, and never pushes.
 
 ## Code review
 
@@ -74,6 +80,7 @@ Reviews use the `envdrift-code-review` skill (`.claude/skills/envdrift-code-revi
 | Test strategy, fixtures, DoD | `docs/system/testing-qa.md` |
 | AI mistakes → context changes | `docs/ai-log.md` |
 | Code review reports | `docs/reviews/` |
+| Commit messages and staged-change rules | `docs/conventions/commits.md` |
 
 ## Placeholders (replace when known)
 
