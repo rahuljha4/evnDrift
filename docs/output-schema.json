@@ -25,19 +25,19 @@
     "stats": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["filesScanned", "filesSkipped", "durationMs"],
+      "required": ["filesScanned", "filesSkipped", "durationMs", "suppressed"],
       "properties": {
         "filesScanned": { "type": "integer", "minimum": 0 },
         "filesSkipped": { "type": "integer", "minimum": 0 },
         "durationMs": {
           "type": "number",
           "minimum": 0,
-          "description": "Wall-clock time. Varies between runs — determinism tests must normalise it (open question, see architecture/data-model.md)."
+          "description": "Wall-clock time. Varies between runs — determinism tests must normalise it (see architecture/data-model.md)."
         },
         "suppressed": {
           "type": "integer",
           "minimum": 0,
-          "description": "Open question: PRD §11 counts suppressed findings in stats.suppressed but §9 omits the field. Allowed here pending decision."
+          "description": "Findings dropped by envdrift-ignore directives. Added by finalize(), not part of ScanModel (architecture/data-model.md OQ1). Pending PRD change-log entry."
         }
       }
     },

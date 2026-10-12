@@ -1,6 +1,8 @@
 # Module Reference — `packages/action`
 
 > GitHub Action wrapper ([PRD §14](../prd.md#14-github-action), [ADR 0008](adr/0008-distribution-npm-and-action.md)). Private package. It is bundled by tsup into a single ESM file, `dist/index.js`, which is committed on the release tag so the runner needs no `npm install`. Usage: `uses: <gh-user>/envdrift@v0`.
+>
+> **Open item (decide before M4.2):** GitHub resolves `uses: <owner>/<repo>@<ref>` to `action.yml` at the repo **root**, but the stub lives in `packages/action/`. Recommended: add a root `action.yml` that points at the bundled `packages/action/dist/index.js`, so every doc keeps the short form. Alternative: document `uses: <gh-user>/envdrift/packages/action@v0`. Either needs a PRD §14 change-log entry. Also tracked in [system/release.md](../system/release.md).
 > Built in M4.2. Functional spec: [functional/github-action.md](../functional/github-action.md).
 
 ## Files

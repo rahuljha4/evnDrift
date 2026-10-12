@@ -2,7 +2,7 @@
 
 > Implements [PRD §9](../prd.md#9-data-model-core-types). Code lives in `packages/core/src/types.ts`. If this page and the PRD disagree, the PRD wins. Raise the conflict, don't silently pick one.
 
-## 1. Core types (verbatim from PRD §9)
+## 1. Core types (PRD §9, plus one pending addition: `stats.suppressed`, see OQ1)
 
 ```ts
 type Severity = 'error' | 'warning' | 'info';
@@ -58,7 +58,7 @@ interface ScanResult {
   version: 1;
   findings: Finding[];
   summary: Record<Severity, number>;
-  stats: ScanModel['stats'];
+  stats: ScanModel['stats'] & { suppressed: number };   // OQ1: added by finalize()
   warnings: string[];
 }
 
@@ -104,7 +104,7 @@ Required by [PRD §16](../prd.md#16-non-functional-requirements): same input →
 4. **Warnings:** lexicographic, de-duplicated.
 5. String comparison uses plain code-unit ordering (`a < b`), not `localeCompare`, so results do not depend on the machine's locale.
 
-`stats.durationMs` is the only field that varies by design. Golden tests mask it before comparison.
+`stats.durationMs` is the only field that varies by design. The CLI sets it to total elapsed time just before `finalize`. Golden tests mask it before comparison.
 
 ## 5. `ScanResult` as JSON
 
@@ -123,6 +123,6 @@ Required by [PRD §16](../prd.md#16-non-functional-requirements): same input →
 
 | # | Question | Proposed resolution |
 |---|---|---|
-| OQ1 | [PRD §11](../prd.md#11-rules) says suppressed findings are "counted in `stats.suppressed`", but §9 `stats` has no `suppressed` field. The table reporter footer (§13) also shows a suppressed count. | Proposal: add `suppressed: number` to `ScanModel['stats']` (and so to `ScanResult.stats`). This is additive, so it stays `version: 1`. Needs a PRD change-log entry before M1.4. |
+| OQ1 | [PRD §11](../prd.md#11-rules) says suppressed findings are "counted in `stats.suppressed`", but §9 `stats` has no `suppressed` field. The table reporter footer (§13) also shows a suppressed count. | **Resolved here, pending PRD change-log entry (v2.2) before M1.4.** `ScanResult.stats = ScanModel['stats'] & { suppressed: number }`. The count is unknown when the model is built (suppression runs after rules), so `finalize()` adds it. Additive, so it stays `version: 1`. `output-schema.json` lists it as required. |
 | OQ2 | Where do suppression directives live in the model? §9 does not define a type. | Proposal: `SuppressionDirective { file: string; line: number; scope: 'line' \| 'file'; ruleIds: string[] \| 'all' }`, produced by `suppress.ts`. It is internal and not part of `ScanResult`. |
 | OQ3 | `ruleId` template type has a 1-digit suffix only. | Fine for ED001–ED009. Adding ED010+ needs a type change (additive). |

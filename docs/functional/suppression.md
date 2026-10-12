@@ -57,7 +57,7 @@ Suppression lets a team accept a specific finding without disabling the rule glo
 - The table footer shows `N suppressed`.
 - The JSON output exposes `stats.suppressed`.
 
-> **Open question:** `suppressed` is missing from the §9 `stats` type. *Proposal:* add `suppressed: number` to `ScanModel['stats']`, and therefore to `ScanResult.stats` and [`output-schema.json`](../output-schema.json).
+> **PRD gap (pending change-log entry):** `suppressed` is missing from the §9 `stats` type. *Resolution:* `ScanResult.stats` is `ScanModel['stats'] & { suppressed: number }`, added in `finalize()` because the model is built before suppression runs. See [data-model.md OQ1](../architecture/data-model.md#6-open-questions) and [`output-schema.json`](../output-schema.json).
 
 ## Examples
 

@@ -37,7 +37,8 @@ export interface ScanOptions {
 }
 export async function runScan(opts: ScanOptions): Promise<{ result: ScanResult; rendered: Map<Format, string>; exitCode: 0 | 1 | 2 }>;
 ```
-- This is a programmatic entry point, which the Action reuses.
+- This is a programmatic entry point, which the Action reuses. It returns the rendered strings and the exit code and does **not** print or write `--output` files. `bin.ts` does the printing and writing; the Action ignores stdout and uses `rendered` directly.
+- It measures total elapsed time and sets `stats.durationMs` just before `finalize`.
 - Runs the pipeline described in [data-flow.md §2](data-flow.md#2-envdrift-scan-sequence).
 - `--env` limits the run to a subset of the configured environments.
 - When several formats are requested, the first goes to stdout. Each of the others goes to `--output` plus its extension ([functional/cli.md](../functional/cli.md)).
@@ -57,6 +58,7 @@ export async function runInit(opts: { cwd: string; force: boolean }): Promise<0 
 export function runExplain(ruleId: string): 0 | 2;
 ```
 - Prints the explain text for the rule. The text is embedded at build time from [rules.md](../rules.md), so `docs/` is not read at runtime.
+- Mechanism (Proposal): `commands/explain.ts` imports `docs/rules.md` as raw text (tsup `loader: { '.md': 'text' }`; Vitest `?raw`) and splits it on `## EDxxx` headings. The import lives in `packages/cli`, never in core, so core stays free of file access. A test asserts every ID in `RULE_IDS` has a section.
 - An unknown ID prints the valid IDs and exits 2.
 
 ## `commands/fix.ts`
@@ -101,8 +103,10 @@ export async function trackedEnvFiles(root: string): Promise<string[]>;
 
 ## `sources/*.ts`
 ```ts
-export interface SourceAdapter<C> { read(cfg: C, ctx: { configDir: string; root: string }): Promise<SourceResult> }
+export interface SourceRead { result: SourceResult; comments: CommentLine[] }   // comments: only `envdrift-ignore` lines, for suppress.ts
+export interface SourceAdapter<C> { read(cfg: C, ctx: { configDir: string; root: string }): Promise<SourceRead> }
 ```
+`SourceResult` is part of the model and carries no comments. The adapter returns the parser's `comments` alongside it, and `scan.ts` passes them to `parseSuppressions(…, 'env')`. Without this, `# envdrift-ignore ED003/ED004/ED008` in dotenv and keys files could not reach the suppression stage. `aws-ssm` and `dockerfile` return `comments: []`.
 | Adapter | Reads | Core parser | Notes |
 |---|---|---|---|
 | `dotenv.ts` | file | `parseDotenv` | Missing file → exit 2 (source error) |

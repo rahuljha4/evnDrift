@@ -13,14 +13,14 @@ config ─▶ sources ─▶ ScanModel ─▶ rules ─▶ findings ─▶ suppr
 | 1 | Load config | `cli/io/config.ts` → `core/config/schema.ts` | YAML text | `ResolvedConfig` | No |
 | 2 | Discover files | `cli/io/walk.ts` | root, include/exclude, `.gitignore`, limits | file list + skipped count | No |
 | 3 | Extract references | `core/extract/js.ts` | source text per file | `Reference[]`, `DynamicAccess[]`, comments, warnings | No |
-| 3b | Parse suppressions | `core/suppress.ts` | code comments; `#` comment lines from dotenv/keys parsers | `SuppressionDirective[]` | No |
-| 4 | Read sources | `cli/sources/*` → `core/parse/*` | file text / SSM pages | `SourceResult` | **Yes, inside the parser only** — dropped before return |
+| 3b | Parse suppressions | `core/suppress.ts` | code comments (from extract); `#` comment lines (from the `comments` returned with each source read, step 4) | `SuppressionDirective[]` | No |
+| 4 | Read sources | `cli/sources/*` → `core/parse/*` | file text / SSM pages | `SourceRead` = `SourceResult` + `CommentLine[]` | **Yes, inside the parser only** — dropped before return |
 | 5 | Tracked env files | `cli/io/git.ts` → `core/parse/dotenv.ts` | `git ls-files` + file text | `Declaration[][]` | Same as 4 |
 | 6 | Build model | `core/model.ts` | all of the above + config | `ScanModel` (ignore list applied) | No |
 | 7 | Run rules | `core/rules/ED00x.ts` | `ScanModel` | `Finding[]` (default severity) | No |
 | 8 | Suppression | `core/suppress.ts` | findings + parsed ignore comments | kept findings, suppressed count, unmatched-suppression warnings | No |
 | 9 | Severity resolution | `core/rules/index.ts` | findings + config `rules` + D3 + `--only` | final findings (`off` removed) | No |
-| 10 | Sort + fingerprint | `core/rules/index.ts` | findings | sorted `ScanResult` | No |
+| 10 | Sort + fingerprint | `core/rules/index.ts` | findings, `suppressed` count, total `durationMs` (set by the CLI) | sorted `ScanResult` | No |
 | 11 | Report | `core/report/*` | `ScanResult` | string per format | No |
 | 12 | Write + exit | `cli/commands/scan.ts` | strings, `--fail-on` | stdout / files, exit 0/1/2 | No |
 
@@ -74,7 +74,9 @@ sequenceDiagram
     S->>A: read(source)
     A->>P: parse(text)
     P-->>A: Declaration[]  (values discarded here)
-    A-->>S: SourceResult  (or exit 2 on source error)
+    A-->>S: SourceResult + comments  (or exit 2 on source error)
+    S->>Q: parseSuppressions(comments, file, 'env')
+    Q-->>S: SuppressionDirective[]
   end
   S->>G: trackedEnvFiles(root)
   G->>P: parseDotenv(text)

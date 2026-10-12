@@ -20,6 +20,7 @@ The tool has to run locally (J1, J3, J4) and in pull requests (J2). There is no 
 - Negative:
   - The bundled Action `dist/` must be committed on release tags.
   - Actions are versioned by Git tags, separately from npm semver.
+  - `uses: <gh-user>/envdrift@v0` needs `action.yml` at the repo root, but the stub is in `packages/action/`. Resolve before M4.2 (root `action.yml` recommended; see [modules-action.md](../modules-action.md)).
 
 ## Alternatives considered
 | Option | Why not |
