@@ -52,7 +52,7 @@ When behaviour changed, update the owning doc (CLAUDE.md "Doc map"). Typical mis
 
 ## 7. Review (a required step)
 
-Run `/review` on the diff, using the Skill tool. If you cannot invoke it (for example a non-interactive run), do the review yourself against the checklist in `.claude/commands/review.md`, item by item, and write the findings in the same format (`[severity] path:line: problem → fix`). Say in the hand-off which route you took. Do not end with "please run /review": the review is part of the task, not a follow-up for Rahul.
+Run `/review` on the diff (it uses the `envdrift-code-review` skill), using the Skill tool. If you cannot invoke it (for example a non-interactive run), do the review yourself against the checklists in `.claude/skills/envdrift-code-review/references/`, running its pre-flight script first, and write the findings in the same format (`[severity] path:line: problem → fix`). Say in the hand-off which route you took. Do not end with "please run /review": the review is part of the task, not a follow-up for Rahul.
 
 Fix every `block` and `should` finding. List the `nit`s as left or logged. If the review finds a doc gap, fix the doc rather than trimming the code. Re-run the checks after fixes.
 

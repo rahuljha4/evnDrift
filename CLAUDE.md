@@ -15,6 +15,7 @@ fixtures/         golden repos: <name>/ + expected.json   (contain FAKE .env fil
 docs/             prd.md, rules.md, patterns-catalogue.md, ai-log.md, benchmark.md,
                   functional/, architecture/ (+ adr/), system/
 .claude/commands/ add-rule, add-pattern, review, log-ai-failure
+.claude/skills/   envdrift-code-review (reviews), milestone-task (one PRD §19 task)
 ```
 
 ## Commands
@@ -47,11 +48,15 @@ Node ≥ 20, ESM only. `.npmrc` pins exact versions.
 1. **Plan mode first.** Restate the task ID (e.g. `M1.2`), the PRD section it implements and the files you'll touch.
 2. **Tests first**, then the implementation.
 3. `npm test && npm run typecheck && npm run lint` must be green.
-4. Run `/review` on the diff. Fix the findings, or log them.
+4. Run `/review` on the diff (see [Code review](#code-review)). Fix the findings, or log them.
 5. Rahul reads the diff and commits. Commit messages reference the task ID, e.g. `M2.3: scan command table output`. Claude does not commit unless asked.
 6. If an AI mistake is caught, run `/log-ai-failure`. If it reveals a missing rule, update this file **in the same commit**.
 
 Also update the doc that owns the behaviour when you change it (see the map below). Docs and code drift is a bug.
+
+## Code review
+
+Reviews use the `envdrift-code-review` skill (`.claude/skills/envdrift-code-review/`, also invoked by `/review`). It runs a read-only pre-flight script, applies the checklists in its `references/` folder (security and redaction, architecture, correctness, tests, TypeScript, docs) and never edits source. Reports are saved to `docs/reviews/YYYY-MM-DD-<scope>.md` with tiers BLOCKER / HIGH / MEDIUM / NIT. Fix BLOCKER and HIGH findings before Rahul commits, or log them.
 
 ## Doc map (where truth lives)
 
@@ -68,6 +73,7 @@ Also update the doc that owns the behaviour when you change it (see the map belo
 | Error IDs and messages | `docs/system/error-handling.md` |
 | Test strategy, fixtures, DoD | `docs/system/testing-qa.md` |
 | AI mistakes → context changes | `docs/ai-log.md` |
+| Code review reports | `docs/reviews/` |
 
 ## Placeholders (replace when known)
 
