@@ -6,10 +6,8 @@ Target for submission ([PRD §4](prd.md#4-goals-non-goals-success-criteria)): **
 
 | # | Date | Task | What the AI did | How it was caught | Impact if missed | Context change (file + summary) |
 |---|---|---|---|---|---|---|
-
-<!-- Example shape (delete when the first real row lands):
-| 1 | 2026-10-10 | M0.2 | Treated `process.env.X = 'v'` as a reference | P/N catalogue test N02 failed | ED003 false negatives | patterns-catalogue.md N02 clarified; CLAUDE.md: "writes are not references" |
--->
+| 1 | 2026-10-12 | envdrift-code-review skill eval | The first version of the review skill (v1) could not say whether lint and format passed, because its pre-flight did not run them. In eval run 2 it also folded a value-leak path (a warning that quotes the raw line) into a different finding at HIGH instead of reporting it as its own BLOCKER. In run 3 it rated an unsorted findings array MEDIUM on the guess that a later stage sorts. | Planted-defect eval (docs/reviews/skill-eval.md): the run reports' Uncertainties section and a comparison with the answer key. | A leaked value is the one defect the product cannot ship with. Under-tiering or burying it would let a BLOCKER pass review. | `preflight.mjs` gained `LINT`, `FORMAT` and `WARN_LEAK`; SKILL.md: every leak path is its own BLOCKER; `references/security-and-redaction.md` and `references/correctness.md` updated. |
+| 2 | 2026-10-12 | envdrift-code-review skill eval | A subagent's final hand-back message was the literal text "placeholder" while its report file was complete. | Opened the report file and compared it with the answer key instead of trusting the hand-back. | Grading from the hand-back would have scored the run as empty or invented its content. | No repo rule needed: docs/reviews/skill-eval.md states that grading uses the report files. |
 
 ## Categories (for the M7.3 summary)
 

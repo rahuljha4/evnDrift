@@ -26,7 +26,7 @@ If the scope is ambiguous, pick the default and say so under Uncertainties. Do n
 
 Run `node ${CLAUDE_SKILL_DIR}/scripts/preflight.mjs [--base <ref>]`. It is read-only, always exits 0 and prints `CHECK <ID> <PASS|FAIL|WARN|INFO|SKIP> <file:line> <message>` lines and a `SUMMARY`. Copy its results into the report verbatim.
 
-- A pre-flight `FAIL` for `TEST`, `TYPECHECK`, `CORE_IO`, `VALUE_PROP` or `PATTERN_IDS`/`RULE_TESTS` is a **BLOCKER** candidate; `CONSOLE` and `NEW_DEP` failures are at least **HIGH**. Confirm by reading the cited line before you tier it.
+- A pre-flight `FAIL` for `TEST`, `TYPECHECK`, `CORE_IO`, `VALUE_PROP`, `WARN_LEAK` or `PATTERN_IDS`/`RULE_TESTS` is a **BLOCKER** candidate; `CONSOLE`, `NEW_DEP` and `LINT` failures are at least **HIGH**; `FORMAT` failures are **MEDIUM**. Confirm by reading the cited line before you tier it.
 - `SKIP` means the check did **not** run. Never write that something passed, ran or was verified unless a pre-flight line says so. List every `SKIP` under Uncertainties.
 - The script cannot judge meaning (rule semantics, whether a test is weak, whether a doc is stale). That is the manual review.
 
@@ -53,6 +53,7 @@ Use [references/report-template.md](references/report-template.md) exactly: tier
 
 - Never edit source, tests or docs. Only write the report. Do not "fix as you go", even typos.
 - Every finding names a real `file:line` you have read. No line, no finding.
+- Give every value-leak path (a `value` field, a warning or error that quotes content, a log of parsed text) its **own BLOCKER finding**. Never fold a leak into a finding about something else and never tier it below BLOCKER: it is the one defect the product cannot ship with.
 - Separate fact (seen in code or tool output) from judgement, and mark judgement as such.
 - No padding: no generic advice, no praise section, no restating the diff.
 - Never claim a command or test ran unless the pre-flight output shows it.

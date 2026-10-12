@@ -101,6 +101,41 @@ function run(id, cmd, cmdArgs) {
 }
 run('TEST', 'npm', ['test']);
 run('TYPECHECK', 'npm', ['run', 'typecheck']);
+run('LINT', 'npm', ['run', 'lint']);
+
+// Prettier on the files in scope only (a repo-wide check would also flag unrelated local files).
+{
+  const changed = (git(['diff', '--name-only', BASE]) ?? '')
+    .split('\n')
+    .concat((git(['ls-files', '--others', '--exclude-standard']) ?? '').split('\n'))
+    .filter(
+      (f) =>
+        f && /\.(ts|tsx|mts|cts|js|mjs|cjs|json|md|ya?ml)$/.test(f) && existsSync(join(ROOT, f)),
+    );
+  if (SKIP_TESTS) emit('FORMAT', 'SKIP', '-', '--skip-tests given; NOT run');
+  else if (changed.length === 0)
+    emit('FORMAT', 'SKIP', '-', 'no changed formattable files in scope');
+  else {
+    const r = spawnSync('npx', ['prettier', '--check', ...changed], {
+      cwd: ROOT,
+      encoding: 'utf8',
+      shell: false,
+    });
+    if (r.status === 0)
+      emit('FORMAT', 'PASS', '-', `prettier --check clean on ${changed.length} changed file(s)`);
+    else {
+      const bad = `${r.stdout ?? ''}${r.stderr ?? ''}`
+        .split('\n')
+        .filter(
+          (l) =>
+            l.startsWith('[warn]') && !l.includes('Code style issues') && l.trim() !== '[warn]',
+        )
+        .map((l) => l.replace('[warn] ', '').trim());
+      for (const f of bad.length ? bad : ['(see prettier output)'])
+        emit('FORMAT', 'FAIL', f, 'prettier --check reports formatting differences');
+    }
+  }
+}
 
 // ---- TypeScript AST (comments and strings must never trigger a finding) ----------------
 let ts = null;
@@ -282,6 +317,105 @@ if (!ts) {
         'PASS',
         'packages/*/src',
         `no exported interface or type literal has a "value" property (${files.length} files)`,
+      );
+  }
+}
+
+// ---- warnings / errors that interpolate content (value-leak path) -----------------------
+{
+  const SENSITIVE = new Set([
+    'line',
+    'rawLine',
+    'raw',
+    'text',
+    'content',
+    'contents',
+    'value',
+    'val',
+    'source',
+    'src',
+    'code',
+    'input',
+    'body',
+    'match',
+    'snippet',
+    'rest',
+    'segment',
+    'token',
+    'literal',
+  ]);
+  if (!ts) emit('WARN_LEAK', 'SKIP', '-', 'typescript package not found; check NOT run');
+  else {
+    const files = walk(join(ROOT, 'packages'), (f) => isTs(f) && f.includes(`${sep}src${sep}`));
+    let found = false;
+    for (const file of files) {
+      const sf = ts.createSourceFile(file, read(file), ts.ScriptTarget.Latest, true);
+      const at = (node) =>
+        `${rel(file)}:${sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1}`;
+      const leaks = (expr) => {
+        const hits = [];
+        const scan = (n) => {
+          if (ts.isTemplateExpression(n)) {
+            for (const span of n.templateSpans) {
+              const e = span.expression;
+              const id = ts.isIdentifier(e)
+                ? e.text
+                : ts.isPropertyAccessExpression(e) && ts.isIdentifier(e.name)
+                  ? e.name.text
+                  : null;
+              if (id && SENSITIVE.has(id)) hits.push(id);
+            }
+          } else if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+            for (const side of [n.left, n.right])
+              if (ts.isIdentifier(side) && SENSITIVE.has(side.text)) hits.push(side.text);
+          }
+          ts.forEachChild(n, scan);
+        };
+        scan(expr);
+        return hits;
+      };
+      const visit = (node) => {
+        let sinkExprs = null;
+        let sink = '';
+        if (
+          ts.isCallExpression(node) &&
+          ts.isPropertyAccessExpression(node.expression) &&
+          node.expression.name.text === 'push' &&
+          /warnings?$/i.test(node.expression.expression.getText(sf))
+        ) {
+          sinkExprs = node.arguments;
+          sink = 'warning';
+        } else if (
+          (ts.isNewExpression(node) || ts.isCallExpression(node)) &&
+          /^(?:\w*Error)$/.test(node.expression.getText(sf))
+        ) {
+          sinkExprs = node.arguments ?? [];
+          sink = 'error message';
+        }
+        if (sinkExprs) {
+          for (const arg of sinkExprs) {
+            const hits = leaks(arg);
+            if (hits.length) {
+              found = true;
+              emit(
+                'WARN_LEAK',
+                'FAIL',
+                at(node),
+                `${sink} interpolates "${[...new Set(hits)].join('", "')}", which may hold file content or a value (SEC-08, hard rule 1); use file:line and names only`,
+              );
+            }
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(sf);
+    }
+    if (!found)
+      emit(
+        'WARN_LEAK',
+        'PASS',
+        'packages/*/src',
+        `no warning or error message interpolates content-like identifiers (${files.length} files)`,
       );
   }
 }

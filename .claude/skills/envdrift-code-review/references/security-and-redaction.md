@@ -11,6 +11,7 @@ Sources: PRD §6 D6, §15; `docs/system/security.md` (SEC-01..13); ADR 0006. A c
 
 ## Output channels (SEC-08, T-01..T-05)
 - [ ] Warnings, errors, findings, `message`, `fix`, `note`, snapshots, test names and logs contain names, paths, line numbers, rule IDs and counts only.
+- [ ] No warning, error or log interpolates a variable that holds file content (`line`, `raw`, `text`, `content`, `value`, `match`, `snippet`). Pre-flight `WARN_LEAK` catches the common spellings; read every `warnings.push` and `new Error` in the diff for the rest. Each leak path is its own BLOCKER finding.
 - [ ] Third-party errors (Babel, YAML, zod, AWS SDK) are re-wrapped as `file:line` or `path expected-type`; their `.message` is not forwarded because it can quote source text.
 - [ ] No stack traces by default (`DEBUG=envdrift` only). No debug logging of parsed content.
 - [ ] SARIF has no `snippet` or `contextRegion`; markdown and SARIF reporters receive `Finding`s only.
