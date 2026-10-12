@@ -1,0 +1,33 @@
+{
+  "name": "@rahulkumar/envdrift",
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Catch missing, unused and leaked environment variables before deploy. Reads names only, never values.",
+  "license": "MIT",
+  "keywords": [
+    "env",
+    "dotenv",
+    "environment-variables",
+    "config-drift",
+    "ci",
+    "lint",
+    "secrets"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<gh-user>/envdrift.git",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "envdrift": "dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

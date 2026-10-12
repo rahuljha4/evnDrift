@@ -1,0 +1,14 @@
+{
+  "name": "@envdrift/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "EnvDrift core: pure extraction, parsing, rules and reporters. No I/O.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}

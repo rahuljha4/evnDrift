@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/<gh-user>/envdrift/blob/main/docs/output-schema.json",
+  "title": "EnvDrift ScanResult",
+  "description": "Output of `envdrift scan --format json` (PRD §9, §13). Contains variable NAMES only — never values. Findings sorted by severity (error, warning, info), ruleId, name, file, line.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "findings", "summary", "stats", "warnings"],
+  "properties": {
+    "version": { "const": 1 },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error", "warning", "info"],
+      "properties": {
+        "error": { "type": "integer", "minimum": 0 },
+        "warning": { "type": "integer", "minimum": 0 },
+        "info": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filesScanned", "filesSkipped", "durationMs"],
+      "properties": {
+        "filesScanned": { "type": "integer", "minimum": 0 },
+        "filesSkipped": { "type": "integer", "minimum": 0 },
+        "durationMs": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Wall-clock time. Varies between runs — determinism tests must normalise it (open question, see architecture/data-model.md)."
+        },
+        "suppressed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Open question: PRD §11 counts suppressed findings in stats.suppressed but §9 omits the field. Allowed here pending decision."
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "severity": { "enum": ["error", "warning", "info"] },
+    "location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "line"],
+      "properties": {
+        "file": { "type": "string", "description": "Posix path relative to scan root." },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "severity", "message", "locations", "fix", "fingerprint"],
+      "properties": {
+        "ruleId": { "type": "string", "pattern": "^ED00[1-9]$" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_.-]*$" },
+        "message": { "type": "string", "pattern": "^[^\\n]*$" },
+        "locations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/location" }
+        },
+        "environments": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "fix": { "type": "string", "pattern": "^[^\\n]*$" },
+        "fingerprint": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+        "note": { "type": "string" }
+      }
+    }
+  }
+}

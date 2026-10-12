@@ -1,0 +1,20 @@
+# dependencies and build output
+node_modules/
+dist/
+coverage/
+reports/
+.stryker-tmp/
+*.tgz
+
+# real env files at the repo root only — fixtures/ deliberately contain
+# fake .env files for golden and redaction tests
+/.env
+/.env.*
+!/.env.example
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

@@ -1,0 +1,32 @@
+# NOTE: GitHub resolves `uses: <owner>/<repo>@<ref>` to action.yml at the repo ROOT.
+# With this file in packages/action/, consumers must write
+# `uses: <gh-user>/envdrift/packages/action@v0`. Decide before M4.2 (see docs/prd.md §14).
+
+name: EnvDrift
+description: Fail the PR when env variables used in code are missing from .env.example or a configured environment. Names only, never values.
+author: Rahul Kumar
+branding:
+  icon: shield
+  color: orange
+
+inputs:
+  config:
+    description: Path to envdrift config file.
+    required: false
+    default: envdrift.config.yaml
+  fail-on:
+    description: Lowest severity that fails the step (error | warning | never).
+    required: false
+    default: error
+  comment:
+    description: Create or update a single PR comment with the report (needs pull-requests write).
+    required: false
+    default: 'true'
+  sarif-file:
+    description: If set, also write a SARIF report to this path for github/codeql-action/upload-sarif.
+    required: false
+    default: ''
+
+runs:
+  using: node24
+  main: dist/index.js

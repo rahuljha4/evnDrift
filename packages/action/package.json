@@ -1,0 +1,11 @@
+{
+  "name": "@envdrift/action",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GitHub Action wrapper around the EnvDrift CLI.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}
