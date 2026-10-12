@@ -69,9 +69,9 @@ A fallback is detected in either case:
 - Each accessor catalogue row (A01–A04) has a test.
 
 ## FR-SRC-04 — Parse failures
-- A Babel syntax error becomes a warning: `"<file>: could not parse (<message>)"`.
+- A Babel syntax error becomes a warning: `"<file>: parse error at L:C — skipped"` (owner decision M0.2: line and column only, because parser messages can echo source identifiers). A recoverable error gives `"… — recovered"` and the file is still walked.
 - The file is counted in `filesSkipped`, and the scan continues.
-- The warning never includes source text.
+- The warning never includes source text or the parser message.
 
 ---
 
@@ -83,7 +83,10 @@ A fallback is detected in either case:
 | `hasValue` | `true` if the value after unquoting is non-empty |
 | `looksSecret` | `looksLikeSecret(value)`, computed inside the parser |
 | Duplicate keys | One declaration (first occurrence) plus a warning on the source: `"<file>: duplicate key <NAME> (lines a, b)"` |
-| Invalid lines | Warning with the line number only (no content); the line is skipped |
+| Invalid lines | Warning `"<file>:<line>: invalid line"` with the line number only (no content); the line is skipped |
+| Unterminated quote | Warning `"<file>:<line>: unterminated quote"`. The value is taken as the rest of that line, so later keys are still read. A double-quoted value spans at most 100 lines. |
+| `export` prefix | `export KEY=v` is accepted. A key literally named `export` is not a prefix. |
+| Suppression comments | Only `# envdrift-ignore [EDnnn …]` lines are returned (sanitised to those tokens). Other comments are dropped because they may hold values. |
 | Line numbers | 1-based line of the key |
 
 **Edge cases**

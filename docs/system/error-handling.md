@@ -30,11 +30,13 @@ Exit 2 always takes precedence over 1. Warnings never change the exit code.
 | Situation | Outcome | Where reported |
 |---|---|---|
 | JS/TS file fails to parse | warning `W-PARSE`, file skipped, scan continues | `ScanResult.warnings`, table footer, stderr summary |
+| JS/TS file has a recoverable syntax error, or is nested too deeply | `<file>: parse error at L:C — recovered` (file still extracted), or `<file>: too deeply nested — skipped` (file skipped) | `ScanResult.warnings` |
 | File over `limits.maxFileBytes` | warning, file skipped | same |
 | Binary file (NUL in the first 8 KB) | silently skipped, counted in `filesSkipped` | stats only |
 | Symlink pointing outside root | warning, not followed | warnings |
 | Duplicate key in a dotenv or keys file | warning on the source | `SourceResult.warnings` |
 | Malformed line in a dotenv, keys or Dockerfile source | warning with file:line, line skipped | `SourceResult.warnings` |
+| Unterminated quote in a dotenv source | warning with file:line (`unterminated quote`); the rest of the line is the value, later keys still parse | `SourceResult.warnings` |
 | Compose `env_file` missing | warning on the compose source; silent if the entry is `{ path, required: false }` (Proposal, PRD is silent; aligned with [functional/sources.md](../functional/sources.md)). `env_file` often points at a gitignored local `.env`, so an error would break CI. The compose file itself missing is still `E-SRC-01`. | `SourceResult.warnings` |
 | SSM path returns no parameters | warning, not error (PRD §10.6) | warnings |
 | Suppression comment that matches nothing | `info` warning, only in `--strict` | warnings |
