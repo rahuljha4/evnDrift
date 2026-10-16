@@ -29,6 +29,7 @@ Source: [PRD §12](../prd.md#12-configuration).
 | `exclude` | string[] (globs) | D2 defaults (below) | User values **replace** the defaults; they are not merged. |
 | `frontendPrefixes` | string[] | `[]` (`init` fills these in from dependencies) | Used by ED006. |
 | `accessors` | string[] | `[]` | Wrapper accessors, e.g. `getEnv` or `config.get` ([ADR 0007](../architecture/adr/0007-configurable-accessors.md)). |
+| `nextConfigEnv` | `auto` \| `off` | `auto` | Next.js build-time keys (D12, PRD §10.8, M1.7). `auto`: when a `next.config.*` exists at `root`, references to its `env` keys outside that file are dropped and counted in `stats.buildTimeDropped`. |
 | `environments` | map: name → `{ sources: Source[] }` | `{}` | Names must match `^[A-Za-z0-9_-]+$`. Each environment needs at least 1 source. |
 | `ignore` | string[] | `[]` | Names that never produce findings. Merged with the built-in list. |
 | `ignoreDefaults` | boolean | `true` | Set to `false` to disable the built-in ignore list. |

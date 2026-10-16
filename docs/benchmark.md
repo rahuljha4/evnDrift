@@ -32,7 +32,7 @@ Notes:
 - The 9 camelCase names are not deployment variables. They are keys of the `env` block in umami's `next.config.ts`, which Next.js inlines at build time. Once ED002 exists, they would be reported as missing from `.env.example`.
 
 Open questions (owner: Rahul):
-- **Next.js `next.config` `env` keys.** PRD §10 and the patterns catalogue have no row for them, so `process.env.<key>` reads of these keys count as ordinary references. Options: accept them as ED002 findings that users suppress, or propose a catalogue row or config option (a PRD change-log entry). Decide before M6.3, which measures precision on real repos.
+- **Next.js `next.config` `env` keys.** Resolved in PRD v2.3: decision D12, §10.8 and the `nextConfigEnv` option, built in task M1.7. M6.3 should see the 9 umami names dropped.
 - **ai-log part of the M0.3 acceptance.** PRD §19 says "differences logged in `docs/ai-log.md`", but none of the umami differences is an AI mistake, and `docs/ai-log.md` forbids invented entries. Proposed PRD change-log line: "M0.3 acceptance: unexplained differences and AI mistakes found during the spike are logged in `docs/ai-log.md`."
 
 ## 2. Precision on real repos (M6.3)

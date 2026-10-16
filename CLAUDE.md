@@ -2,7 +2,7 @@
 
 EnvDrift is a CLI and GitHub Action that statically checks that every environment variable a JS/TS codebase reads is declared in `.env.example` and in every configured environment, and that no secret is browser-exposed or committed. It handles **names only**, never values.
 
-- **What** to build: [`docs/prd.md`](docs/prd.md) (v2.1, locked). **How** to work: this file. If they conflict, **stop and ask** Rahul. Do not invent requirements; propose them.
+- **What** to build: [`docs/prd.md`](docs/prd.md) (v2.3, locked). **How** to work: this file. If they conflict, **stop and ask** Rahul. Do not invent requirements; propose them.
 - Milestones: [PRD §5](docs/prd.md#5-current-state-9-oct), [§19](docs/prd.md#19-delivery-plan). Doc map: [docs/README.md](docs/README.md).
 
 ## Layout

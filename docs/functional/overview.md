@@ -129,6 +129,7 @@ Test paths are planned locations. `core/…` means `packages/core/test/…` and 
 | FR-CFG-06 | `rules.<ID>` severity overrides | 11, 12 | M1.5 | `core/rules/index.test.ts` |
 | FR-CFG-07 | `frontendPrefixes` and `accessors` | 10.1, 12 | M1.2 / M1.6 | `core/config/schema.test.ts` |
 | FR-CFG-08 | `limits.maxFileBytes` | 12, 15 | M2.1 | `cli/io/walk.test.ts` |
+| FR-CFG-09 | `nextConfigEnv`: drop references to Next.js build-time `env` keys (D12) | 10.8, 12 | M1.7 | `core/extract/next-config.test.ts`, `core/model.test.ts` |
 | FR-SRC-01 | JS/TS extraction per patterns catalogue | 10.1 | M0.2 | `core/extract/js.test.ts` (one test per catalogue ID) |
 | FR-SRC-02 | Pre-filter on `env` / accessor names | 10.1 | M0.2 / M1.6 | `core/extract/js.test.ts` |
 | FR-SRC-03 | Accessor extraction | 10.1 | M1.6 | `core/extract/accessors.test.ts` |

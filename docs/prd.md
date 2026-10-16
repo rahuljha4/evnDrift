@@ -1,4 +1,4 @@
-# EnvDrift — Product Requirements Document v2.1
+# EnvDrift — Product Requirements Document v2.3
 
 | Field | Value |
 |---|---|
@@ -6,7 +6,7 @@
 | Owner | Rahul |
 | Context | Build With AI Hackathon 2026 (FiftyFive) — individual entry |
 | Build window | 8 Oct – 30 Oct 2026, submission EOD 30 Oct |
-| Status | **Locked for build.** Changes go through the change log in section 20. |
+| Status | **Locked for build.** Changes go through the change log in section 23. |
 | Supersedes | PRD v2.0 (8 Oct) |
 | Intended reader | Rahul, and Claude Code working in this repository |
 
@@ -76,11 +76,11 @@ Done (M0.0):
 - `packages/core/src/types.ts` — section 9 types.
 - Documentation set: `docs/functional/`, `docs/architecture/` (incl. ADRs), `docs/system/`, `docs/patterns-catalogue.md` (drafted, under review), `docs/rules.md`, `CLAUDE.md`, `.claude/commands/`.
 
-Not started (M0.1–M0.3, section 19):
-- `packages/core/src/extract/js.ts` — Babel AST extractor for catalogue patterns P01–P13, F01–F05, D01–D05, N01–N03.
-- `packages/core/src/parse/dotenv.ts` — keys-only dotenv parser with a redaction test.
-- `scripts/spike-scan.ts` — throwaway; **delete in M2.5** once the CLI replaces it.
-- Spike benchmark on umami (names agreed with grep, grep-only extras explained, scan time) — target: v2.0's expected result of full agreement and < 1 s for ~113 files.
+Done since (M0.1–M0.3, by 16 Oct; v2.3):
+- `packages/core/src/parse/dotenv.ts` — keys-only dotenv parser with a redaction test (M0.1).
+- `packages/core/src/extract/js.ts` — Babel AST extractor for every row of the locked `docs/patterns-catalogue.md` (M0.2).
+- `scripts/spike-scan.ts` — throwaway; **delete in M2.5** once the CLI replaces it (M0.3).
+- Spike benchmark on umami v3.4.0 (1,210 files): every difference with grep explained, median scan 75 ms (`docs/benchmark.md` §1). It found the Next.js build-time keys behind D12.
 
 ## 6. Locked decisions
 
@@ -99,6 +99,7 @@ These resolve the open questions from v1. Do not reopen without a change-log ent
 | D9 | No AI at runtime | CI tools must be deterministic |
 | D10 | Node ≥ 20, ESM only | Matches current LTS; simpler build |
 | D11 | Publish as scoped `@rahulkumar/envdrift` (scope is a placeholder until the npm account is confirmed); bin command stays `envdrift` (ADR 0011) | `envdrift` is already taken on npm (v2.0.1, checked 9 Oct); section 21 fallback applied |
+| D12 | Keys of the `env` object in `next.config.*` are build-time constants. References to them outside `next.config.*` are dropped before the rules run; reads inside `next.config.*` stay normal references (v2.3) | Next.js inlines these keys at build time, so they never need deploying. The umami spike (M0.3) found 9 such names that ED002 would otherwise report. `ignore` is not enough: it would also hide a real read such as `env: { API_URL: process.env.API_URL }` |
 
 ## 7. User journeys
 
@@ -209,7 +210,7 @@ interface ScanModel {
   environments: Map<string, SourceResult[]>; // env name → its sources
   trackedEnvFiles: Declaration[][];          // per git-tracked .env* file (ED007)
   config: ResolvedConfig;
-  stats: { filesScanned: number; filesSkipped: number; durationMs: number };
+  stats: { filesScanned: number; filesSkipped: number; durationMs: number; buildTimeDropped: number }; // buildTimeDropped: D12, v2.3
 }
 
 interface Finding {
@@ -274,6 +275,13 @@ Plain text, one name per line, `#` comments. For teams that export key lists fro
 - Known prefixes: `sk_live_`, `sk_test_`, `rk_live_`, `ghp_`, `gho_`, `github_pat_`, `AKIA`, `ASIA`, `xoxb-`, `xoxp-`, `AIza`, `-----BEGIN`.
 - Length ≥ 20 and Shannon entropy ≥ 3.5 bits/char, and not an obvious placeholder (`changeme`, `your-*-here`, `xxx…`, `<…>`, `example`, `localhost` URLs).
 
+### 10.8 Next.js build-time env (D12, `nextConfigEnv`, v2.3)
+- The CLI reads the first of `next.config.{ts,mts,js,mjs,cjs}` at `root`. Only the root is checked; monorepo sub-apps are out of scope.
+- `extract/next-config.ts` (core, pure) takes the file text and returns key **names** only: the `env` property of the exported config object, reached through `export default`, `module.exports`, one identifier, or the first argument of one wrapper call (`withX({...})`).
+- Keys may be identifiers, string literals or shorthand properties. Values are never read (`currentVersion: pkg.version` yields only `currentVersion`).
+- A spread or computed key inside `env` gives the warning `<file>:<line>: env has a non-static key; those names are not known`; the scan continues. A parse failure is a warning and no names are taken.
+- The model drops every reference to these names whose file is not the `next.config.*` file, and counts them in `stats.buildTimeDropped`. With `nextConfigEnv: off`, nothing is dropped.
+
 ## 11. Rules
 
 Semantics below are authoritative. `docs/rules.md` holds the `explain` text and must agree with this section.
@@ -315,6 +323,7 @@ exclude:                             # D2 defaults shown; user values replace de
   - "**/{test,tests,e2e,cypress}/**"
 frontendPrefixes: [NEXT_PUBLIC_, VITE_]
 accessors: []                        # e.g. [getEnv, config.get]
+nextConfigEnv: auto                  # auto | off (D12, 10.8): auto applies when next.config.* exists at root
 environments:
   staging:
     sources:
@@ -471,6 +480,7 @@ Each task is sized for one Claude Code session. **Acceptance** must be true befo
 | M1.4 | `suppress.ts` (section 11 syntax) | tests for line, line-above, file, multi-ID, dotenv |
 | M1.5 | Rules ED001, ED002, ED003 (+D3), ED005, ED006, ED009 via `/add-rule` | 3 tests each; severity resolution tests |
 | M1.6 | Accessor extraction (10.1) + catalogue rows | pattern tests pass |
+| M1.7 | `extract/next-config.ts` + model drop (D12, 10.8), `nextConfigEnv` option, `stats.buildTimeDropped` in types and `docs/output-schema.json` | parser tests (object literal, wrapper call, identifier, spread warning); model tests: app reference dropped, `next.config` read kept, `off` drops nothing |
 
 ### M2 — CLI and J1 (12–14 Oct)
 | ID | Task | Acceptance |
@@ -523,7 +533,7 @@ Each task is sized for one Claude Code session. **Acceptance** must be true befo
 Demo video (≤ 5 min), ZIP with full Git history, final secret scan of the repo, submit by EOD 30 Oct. 30 Oct is buffer only.
 
 ### Cut order if behind
-1. M5.1 AWS SSM → 2. M5.2 `fix --example` → 3. SARIF → 4. accessors (M1.6) → 5. ED008. Never cut: redaction test, J1, J2, AI log, docs.
+1. M5.1 AWS SSM → 2. M5.2 `fix --example` → 3. SARIF → 4. Next.js build-time env (M1.7; fallback: README tells users to list the keys in `ignore`) → 5. accessors (M1.6) → 6. ED008. Never cut: redaction test, J1, J2, AI log, docs.
 
 ## 20. Demo script (≤ 5 min)
 
@@ -566,6 +576,7 @@ Demo video (≤ 5 min), ZIP with full Git history, final secret scan of the repo
 | 2026-10-08 | 2.0 | Locked decisions D1–D10; added accessors, keys source, suppression syntax, ED002/ED009 split, D3 downgrade, data model, CLI spec, output formats, Action spec, task-level plan with gates and cut order; Python moved to roadmap |
 | 2026-10-09 | 2.1 | Section 5 corrected (spike did not exist) and milestone M0 added; D11 scoped npm name (`envdrift` taken); doc paths in sections 17 and 22 moved to `docs/functional/`, `docs/architecture/`, `docs/system/`; pre-existing work disclosure dated 9 Oct |
 | 2026-10-12 | 2.2 | Section 17, step 5: commits use the `<type>(<scope>): <summary>` format and the `envdrift-commit` skill, defined in `docs/conventions/commits.md` and enforced by Git hooks; Claude commits only after explicit confirmation and never pushes. |
+| 2026-10-16 | 2.3 | D12 and §10.8: keys of the `env` object in `next.config.*` are build-time; references outside `next.config.*` are dropped before the rules (found by the M0.3 umami spike). §12 `nextConfigEnv: auto\|off`. §9 `stats.buildTimeDropped`. §19 task M1.7; cut order gains it at slot 4. §5 status: M0.1–M0.3 done. Title now shows the current version and the header points at section 23. |
 
 ## 24. Roadmap (post-hackathon, not in scope)
 Python and Go extractors; alias following; Kubernetes, Terraform, Vercel, Netlify sources; Secrets Manager key listing; VS Code extension; pre-commit hook; optional AI-written explanations.

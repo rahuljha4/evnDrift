@@ -11,6 +11,7 @@ This is the **only** definition of what `packages/core/src/extract/js.ts` recogn
 - **Test naming**: `it('P01: process.env.X', …)` in `packages/core/test/extract/js.test.ts`. The ID prefix is mandatory so that `grep P01` finds the row, the test and any ai-log entry.
 - **Env objects** recognised: `process.env`, `globalThis.process.env`, `global.process.env`, `import.meta.env`. `process` must not be locally bound (see N03).
 - **File types**: `.js .jsx .mjs .cjs .ts .tsx .mts .cts`; `.d.ts` is skipped. One parser config enables `jsx` + `typescript` (for `.ts`, JSX is off so that `<T>x` casts parse).
+- **Next.js build-time keys** ([D12](prd.md#6-locked-decisions), PRD §10.8): not a pattern, so no ID. The extractor still reports `process.env.apiUrl` as `R(apiUrl, …)`; the model drops it later when `apiUrl` is a `next.config.*` `env` key.
 
 ## P — references
 
