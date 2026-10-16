@@ -20,7 +20,7 @@ Sources: PRD §9, §11, §12, §13, §16; `docs/functional/rules/EDxxx.md`; `doc
 - [ ] Location-based: covered locations are removed; a finding is dropped (and counted in `stats.suppressed`) only when all its locations are removed.
 
 ## Determinism and positions (hard rule 5, I2, I3)
-- [ ] A function that hands findings to a caller outside core (`runRules`, `finalize`, a reporter input) without the explicit sort breaks hard rule 5 (**HIGH**, **BLOCKER** if it feeds output). Do not downgrade it because a later stage "may" sort: confirm that stage exists in the repo and cite it, otherwise it is a finding.
+- [ ] A function that hands findings to a caller outside core (`runRules`, `finalize`, a reporter input) without the explicit sort breaks hard rule 5 (**HIGH**, **BLOCKER** if it feeds output). Do not downgrade it because a later stage "may" sort: confirm that stage exists in the repo and cite it, otherwise it is a finding. Report it as its own finding, never inside a MEDIUM or NIT item about ordering or style.
 - [ ] Findings sorted by severity (error, warning, info), ruleId, name (missing first), file, line, with plain `<` comparison, never `localeCompare`. Locations sorted file, line, column; environments lexicographic; warnings de-duplicated and sorted.
 - [ ] Nothing depends on `Map`/`Set` insertion order from fs walk order, on `Object.keys` of unsorted input, or on timestamps (only `stats.durationMs` may vary).
 - [ ] `line` and `column` are 1-based (Babel columns converted).

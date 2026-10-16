@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { stagedDiffHash } from '../diff-hash.mjs';
-import { checkReviewGate, parseReport } from '../review-gate.mjs';
+import { checkReviewGate, parseReport, tierCounts } from '../review-gate.mjs';
 
 const H = 'a'.repeat(64);
 const report = (hash, blockers = [], highs = []) => ({
@@ -19,9 +19,63 @@ describe('parseReport', () => {
       hash: H,
       blockers: 2,
       highs: 1,
+      unreadable: false,
     });
-    expect(parseReport(report(H).text)).toEqual({ hash: H, blockers: 0, highs: 0 });
+    expect(parseReport(report(H).text)).toEqual({
+      hash: H,
+      blockers: 0,
+      highs: 0,
+      unreadable: false,
+    });
     expect(parseReport('no hash here').hash).toBeNull();
+  });
+});
+
+describe('tierCounts formats', () => {
+  const tiers = (blocker, high = 'none') =>
+    `### BLOCKER\n${blocker}\n### HIGH\n${high}\n### MEDIUM\nnone\n### NIT\nnone\n`;
+  const count = (text) => tierCounts(text);
+  it('counts numbered findings', () => {
+    expect(count(tiers('1. **a** — `x:1`\n2. **b** — `x:2`')).blockers).toBe(2);
+  });
+  it('does not count the indented Problem / Why / Fix sub-bullets of a finding', () => {
+    const body =
+      '1. **leak** — `a.ts:1`\n   - Problem: x\n   - Why it matters: y\n   - Fix: z\n2. **fs** — `b.ts:2`\n   - Problem: x';
+    expect(count(tiers(body)).blockers).toBe(2);
+  });
+  it('counts bold-ID findings like **B1. title**', () => {
+    const t = tiers('**B1. Leak** - a.ts:3. Why.\n\n**B2. fs** - b.ts:1. Why.');
+    expect(count(t).blockers).toBe(2);
+  });
+  it('counts bullet findings', () => {
+    expect(count(tiers('- **a** — `x:1`\n- **b** — `x:2`')).blockers).toBe(2);
+  });
+  it.each(['none', 'None.', '- none', 'No findings.', 'n/a', ''])('reads %j as zero', (body) => {
+    expect(count(tiers(body)).blockers).toBe(0);
+  });
+  it('counts an unrecognised non-empty section as at least one, never zero', () => {
+    expect(count(tiers('The parser leaks values, see keys.ts line 3.')).blockers).toBe(1);
+  });
+  it('does not let a finding in one tier count in another', () => {
+    const c = count(tiers('none', '1. **h** — `x:1`'));
+    expect([c.blockers, c.highs]).toEqual([0, 1]);
+  });
+  it.each(['##', '###', '####'])('reads tier headings written with %s', (h) => {
+    const t = `${h} BLOCKER\n1. **a** — \`x:1\`\n${h} HIGH\nnone\n`;
+    expect(count(t)).toMatchObject({ blockers: 1, highs: 0, unreadable: false });
+  });
+  it('marks a report with no tier headings as unreadable and gives it a blocker', () => {
+    const text = `Staged-diff-sha256: ${H}\nVerdict: APPROVE\nAll good.`;
+    expect(count(text).unreadable).toBe(true);
+    expect(parseReport(text).blockers).toBe(1);
+    expect(rules('feat', H, [{ file: 'docs/reviews/x.md', text }])).toContain('REV-2');
+  });
+  it('blocks the commit gate for a report that uses the bold-ID format', () => {
+    const report = {
+      file: 'docs/reviews/x.md',
+      text: `Staged-diff-sha256: ${H}\n${tiers('**B1. Leak** - a.ts:3. Why.')}`,
+    };
+    expect(rules('feat', H, [report])).toContain('REV-2');
   });
 });
 

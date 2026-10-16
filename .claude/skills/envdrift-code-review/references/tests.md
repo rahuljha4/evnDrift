@@ -9,7 +9,7 @@ Sources: PRD §18; `docs/system/testing-qa.md`; CLAUDE.md hard rules 3 and 4. A 
 - [ ] Test names never contain a config value.
 
 ## Assertion strength (hard rule: exact, not "something")
-- [ ] Assertions are exact: `toEqual` on the full `Reference[]`/`Finding[]` including line, column, severity, locations, environments. Flag `toBeTruthy`, `toBeDefined`, `not.toBeNull`, `.length > 0`, `toHaveLength` alone, and snapshot-only tests with no reasoning.
+- [ ] Assertions are exact: `toEqual` on the full `Reference[]`/`Finding[]` including line, column, severity, locations, environments. Flag `toBeTruthy`, `toBeDefined`, `not.toBeNull`, `.length > 0`, `toHaveLength` alone, and snapshot-only tests with no reasoning. **Tier: a rule or parser test whose only assertion is one of these is HIGH, never MEDIUM** (it passes when the rule is wrong, so it lets a real defect through). Give it its own finding; do not fold it into a MEDIUM list.
 - [ ] Mutation check by reading: for each test ask "would this still pass if the implementation were deleted, returned `[]`, or the condition inverted?" If yes, it is a finding. Rules must be tested both ways (fires / does not fire).
 - [ ] The negative case is a genuine near-miss (the input differs from the positive by exactly the thing the rule keys on), not an unrelated empty input.
 - [ ] Suppression tests show a finding that would fire is removed by the directive, and that a non-matching directive does not remove it.

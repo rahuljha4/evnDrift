@@ -18,3 +18,6 @@ reports/
 .vscode/*
 !.vscode/extensions.json
 *.log
+
+# result cache for the commit checks, quiet wrappers and review/audit agents
+.cache/

@@ -5,7 +5,7 @@ argument-hint: <short description of what went wrong>
 
 Log this AI failure: **$ARGUMENTS**
 
-1. Read `docs/ai-log.md` and find the next row number.
+1. Read only the end of `docs/ai-log.md` (`tail -n 8`) to find the next row number and the column order.
 2. Fill in every column from the description and the current session:
    - **Date**: today (YYYY-MM-DD).
    - **Task**: the milestone task ID in progress (e.g. `M1.5`). Ask if it is unclear.

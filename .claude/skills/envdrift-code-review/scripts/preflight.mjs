@@ -12,6 +12,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join, relative, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const args = process.argv.slice(2);
 const baseIdx = args.indexOf('--base');
@@ -107,8 +108,16 @@ function run(id, cmd, cmdArgs) {
     emit(id, 'FAIL', '-', `${cmd} ${cmdArgs.join(' ')} exit ${r.status ?? 'signal'}: ${tail}`);
   }
 }
-run('TEST', 'npm', ['test']);
-run('TYPECHECK', 'npm', ['run', 'typecheck']);
+// Tests and typecheck go through the quiet wrappers (one line on pass, failures only, cached per
+// tree), never the raw commands.
+async function runQuiet(id, file, fn) {
+  if (SKIP_TESTS) return emit(id, 'SKIP', '-', '--skip-tests given; NOT run');
+  const mod = await import(pathToFileURL(join(ROOT, 'scripts', 'quiet', file)).href);
+  const r = mod[fn]({ root: ROOT });
+  emit(id, r.ok ? 'PASS' : 'FAIL', '-', r.text.split('\n').slice(0, 12).join(' | '));
+}
+await runQuiet('TEST', 'test.mjs', 'runTests');
+await runQuiet('TYPECHECK', 'typecheck.mjs', 'runTypecheck');
 run('LINT', 'npm', ['run', 'lint']);
 
 // Prettier on the files in scope only (a repo-wide check would also flag unrelated local files).
@@ -594,6 +603,60 @@ if (!ts) {
         `${ids.filter((i) => !i.planned).length} catalogue IDs and ${titled.size} pattern-ID tests agree`,
       );
   }
+}
+
+// ---- deterministic checks the free-text review under-tiered in evaluation ----------------
+{
+  const mod = await import(
+    pathToFileURL(join(ROOT, 'scripts', 'commit-checks', 'static-checks.mjs')).href
+  );
+  const lineAt = (file, n) => `${posix(relative(ROOT, file))}:${n}`;
+  const isTestFile = (f) => /\.test\.(ts|tsx|mts|cts)$/.test(f);
+  // Only test files in the diff: older tests are not this change's to fix (and may use a guard).
+  const inDiff = new Set(
+    (git(STAGED ? ['diff', '--cached', '--name-only'] : ['diff', '--name-only', BASE]) ?? '')
+      .split('\n')
+      .concat(STAGED ? [] : (git(['ls-files', '--others', '--exclude-standard']) ?? '').split('\n'))
+      .filter(Boolean),
+  );
+  const tests = walk(
+    join(ROOT, 'packages'),
+    (f) => isTestFile(f) && inDiff.has(posix(relative(ROOT, f))),
+  );
+
+  let weak = 0;
+  for (const f of tests)
+    for (const w of mod.findWeakAssertions(read(f))) {
+      weak++;
+      emit(
+        'WEAK_ASSERT',
+        'FAIL',
+        lineAt(f, w.line),
+        `assertion passes for almost any result: ${w.text}`,
+      );
+    }
+  if (!weak)
+    emit(
+      'WEAK_ASSERT',
+      'PASS',
+      'packages/*/test',
+      `no weak assertions in ${tests.length} changed test file(s)`,
+    );
+  let unsorted = 0;
+  for (const f of coreSrc) {
+    const hit = mod.findUnsortedAggregator(read(f));
+    if (hit) {
+      unsorted++;
+      emit(
+        'UNSORTED',
+        'FAIL',
+        lineAt(f, hit.line),
+        `${hit.name} hands findings on and this file never sorts (hard rule 5)`,
+      );
+    }
+  }
+  if (!unsorted)
+    emit('UNSORTED', 'PASS', 'packages/core/src', 'no findings aggregator without a sort');
 }
 
 // Staged-diff hash for the report header; must match scripts/commit-checks/diff-hash.mjs.

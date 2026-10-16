@@ -3,6 +3,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { runTests } from '../quiet/test.mjs';
+import { runTypecheck } from '../quiet/typecheck.mjs';
 import { stagedDiffHash } from './diff-hash.mjs';
 import { stagedAddedLines, stagedFiles, repoRoot } from './git.mjs';
 import { checkMessage, parseMessage } from './message.mjs';
@@ -14,18 +16,6 @@ import { fail } from './report.mjs';
 
 const isDocsOnly = (files) =>
   files.length > 0 && files.every((f) => f.path.startsWith('docs/') || f.path.endsWith('.md'));
-
-function npm(root, args) {
-  const r = spawnSync('npm', args, {
-    cwd: root,
-    encoding: 'utf8',
-    shell: process.platform === 'win32',
-  });
-  return {
-    ok: r.status === 0,
-    output: `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().split('\n').slice(-12).join('\n'),
-  };
-}
 
 /** Checks that need only the staged files and the working tree (pre-commit). */
 export function runPreCommit({ root = repoRoot(), skipTests = false, env = process.env } = {}) {
@@ -47,25 +37,25 @@ export function runPreCommit({ root = repoRoot(), skipTests = false, env = proce
       'TEST-1 npm test, TYPE-1 typecheck: skipped because FAST=1 and the commit is docs-only',
     );
   else {
-    const t = npm(root, ['test']);
-    ran.push('TEST-1');
+    const t = runTests({ root });
+    ran.push(t.cached ? 'TEST-1 (cached)' : 'TEST-1');
     if (!t.ok)
       failures.push(
         fail(
           'TEST-1',
           '`npm test` fails',
-          t.output.split('\n').slice(-3).join(' | '),
+          t.text.split('\n').slice(0, 4).join(' | '),
           'Fix the failing tests, then re-stage.',
         ),
       );
-    const c = npm(root, ['run', 'typecheck']);
-    ran.push('TYPE-1');
+    const c = runTypecheck({ root });
+    ran.push(c.cached ? 'TYPE-1 (cached)' : 'TYPE-1');
     if (!c.ok)
       failures.push(
         fail(
           'TYPE-1',
           '`npm run typecheck` fails',
-          c.output.split('\n').slice(-3).join(' | '),
+          c.text.split('\n').slice(0, 4).join(' | '),
           'Fix the type errors, then re-stage.',
         ),
       );

@@ -13,9 +13,15 @@ const PREFIXES = [
   'AIza',
   '-----BEGIN',
 ];
-// The scanner defines the prefixes and tests them with fake keys, and the conventions list them.
+// The scanner defines the prefixes and tests them with fake keys, the conventions list them, and
+// the setup prompts under docs/setup/ restate the rules (including the prefix list) in prose.
 const SELF = (path) =>
-  path.startsWith('scripts/commit-checks/') || path === 'docs/conventions/commits.md';
+  path.startsWith('scripts/commit-checks/') ||
+  path === 'docs/conventions/commits.md' ||
+  path.startsWith('docs/setup/');
+// Lower-case kebab-case words (heading anchors, file names such as 2026-10-13-review-run6) are
+// prose, not keys: real keys mix cases or use base64 characters.
+const KEBAB_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)+$/;
 const SKIP = (path) =>
   SELF(path) ||
   path === 'package-lock.json' ||
@@ -56,6 +62,7 @@ export function checkSecrets(added) {
       // Git object IDs and sha256 digests are not secrets; identifiers without digits are not either.
       if (/^[0-9a-f]{40}$|^[0-9a-f]{64}$/.test(token)) continue;
       if (!/[A-Za-z]/.test(token) || !/[0-9]/.test(token)) continue;
+      if (KEBAB_SLUG.test(token)) continue;
       if (entropy(token) >= 3.5) {
         failures.push(
           fail(

@@ -36,6 +36,24 @@ describe('checkStagedFiles', () => {
 
 describe('checkSecrets', () => {
   const line = (text, path = 'src/a.ts') => [{ path, line: 3, text }];
+  it('does not flag lower-case kebab-case slugs such as heading anchors and report file names', () => {
+    const slug = '[PRD](../prd.md#17-ai-assisted-development-plan-35-of-the-score)';
+    expect(checkSecrets(line(slug, 'docs/a.md'))).toEqual([]);
+    expect(
+      checkSecrets(line('see docs/reviews/2026-10-13-review-eval-run6.md', 'docs/a.md')),
+    ).toEqual([]);
+  });
+  it('still flags a mixed-case token that merely contains hyphens', () => {
+    expect(
+      checkSecrets(line('token: q8Zr2LmV-9xTb4NwK7pYc3HsD', 'docs/a.md')).map((x) => x.rule),
+    ).toEqual(['SECRET-2']);
+  });
+  it('does not scan the setup prompts, which restate the prefix list, but scans other docs', () => {
+    expect(checkSecrets(line('prefixes: sk_live_, ghp_', 'docs/setup/prompt.md'))).toEqual([]);
+    expect(
+      checkSecrets(line('prefixes: sk_live_, ghp_', 'docs/other.md')).map((x) => x.rule),
+    ).toEqual(['SECRET-1']);
+  });
   it('SECRET-1 flags known key prefixes', () => {
     for (const v of [
       'sk_live_abc',

@@ -6,8 +6,8 @@ argument-hint: <ruleId e.g. ED001>
 Implement rule **$ARGUMENTS**.
 
 ## Read first
-1. `docs/prd.md` §11: the row for $ARGUMENTS. This is authoritative.
-2. `docs/functional/rules/$ARGUMENTS.md`: the full spec, examples and required test names.
+1. `node scripts/doc-lookup.mjs prd 11`: the row for $ARGUMENTS. This is authoritative. Use `doc-lookup` for PRD parts; do not read `docs/prd.md` whole.
+2. `docs/functional/rules/$ARGUMENTS.md`: the full spec, examples and required test names. Also `node scripts/doc-lookup.mjs rule $ARGUMENTS` for the `explain` text.
 3. `docs/functional/severity-resolution.md` and `docs/functional/suppression.md`.
 4. `docs/architecture/data-model.md`: Finding shape, fingerprint, sort order.
 5. Existing rules in `packages/core/src/rules/` and `rules/index.ts`. Follow their style.
@@ -19,11 +19,11 @@ If the PRD row and the functional spec disagree, **stop and ask**. Do not pick o
    - `$ARGUMENTS positive: …`: builds an in-memory `ScanModel` and asserts the exact findings (ruleId, severity, name, locations, environments, message, fix).
    - `$ARGUMENTS negative: …`: a near-miss that must produce no finding.
    - `$ARGUMENTS suppression: …`: the same input as positive with an `envdrift-ignore` comment, or the name in `ignore`, gives no finding.
-2. Run the tests and confirm they fail.
+2. Run `node scripts/quiet/test.mjs --no-cache` and confirm they fail.
 3. Create `packages/core/src/rules/$ARGUMENTS.ts`, a pure `Rule`. No I/O, no values, deterministic output.
 4. Register it in `packages/core/src/rules/index.ts` with its default severity.
 5. Check that the `## $ARGUMENTS` section in `docs/rules.md` matches the implemented behaviour. Update it if wording drifted.
-6. Run `npm test && npm run typecheck && npm run lint`.
+6. Run `node scripts/quiet/test.mjs`, `node scripts/quiet/typecheck.mjs` and `npm run lint`. Use `npm run test:coverage` only for the 100 % check below.
 
 ## Done when
 - The 3+ tests pass, and coverage of the new rule file is 100 % lines.
